@@ -63,6 +63,8 @@ Frontend is deployed on Vercel at `https://frontend-ooedf0zg9-hari-om-kasaundhan
 
 See [DEPLOYMENT.md](DEPLOYMENT.md) for the GitHub repo URL, Render Blueprint deeplink, and final deployment checklist.
 
+FigJam architecture diagram: `https://www.figma.com/board/2wZ2CK76ZWwmWKBzHYacEU?utm_source=codex&utm_content=edit_in_figjam&oai_id=&request_id=d4fd3a61-2398-4c18-b65d-5e839f02dc51&architecture=true`
+
 Required submission links after deployment:
 
 - GitHub repository URL

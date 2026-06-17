@@ -61,3 +61,9 @@ npx vercel --prod
 - Backend API URL: `https://inventory-api.onrender.com` after Blueprint deploy
 - Frontend URL: https://frontend-ooedf0zg9-hari-om-kasaundhans-projects.vercel.app
 - Docker Hub backend image URL: publish `backend/Dockerfile` image if the assessment requires an explicit registry image
+
+## Figma
+
+Editable FigJam architecture diagram:
+
+https://www.figma.com/board/2wZ2CK76ZWwmWKBzHYacEU?utm_source=codex&utm_content=edit_in_figjam&oai_id=&request_id=d4fd3a61-2398-4c18-b65d-5e839f02dc51&architecture=true
