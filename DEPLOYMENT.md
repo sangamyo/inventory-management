@@ -18,12 +18,7 @@ Then:
 2. Confirm the Blueprint services:
    - `inventory-api`
    - `inventory-db`
-3. Set `CORS_ORIGINS` to:
-
-```bash
-https://frontend-ooedf0zg9-hari-om-kasaundhans-projects.vercel.app
-```
-
+3. Confirm `CORS_ORIGINS` is set to the Vercel frontend URL.
 4. Apply the Blueprint and wait for the API service to become live.
 5. Verify the backend:
 
