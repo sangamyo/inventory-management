@@ -18,7 +18,12 @@ Then:
 2. Confirm the Blueprint services:
    - `inventory-api`
    - `inventory-db`
-3. Set `CORS_ORIGINS` to the deployed Vercel frontend URL after the frontend deploy finishes.
+3. Set `CORS_ORIGINS` to:
+
+```bash
+https://frontend-ooedf0zg9-hari-om-kasaundhans-projects.vercel.app
+```
+
 4. Apply the Blueprint and wait for the API service to become live.
 5. Verify the backend:
 
@@ -34,12 +39,16 @@ Expected response:
 
 ## Frontend on Vercel
 
+Production URL:
+
+https://frontend-ooedf0zg9-hari-om-kasaundhans-projects.vercel.app
+
 Deploy from the `frontend` directory.
 
 Set this environment variable before production deployment:
 
 ```bash
-VITE_API_URL=https://YOUR_RENDER_API_URL
+VITE_API_URL=https://inventory-api.onrender.com
 ```
 
 Then deploy:
@@ -49,11 +58,11 @@ cd frontend
 npx vercel --prod
 ```
 
-After Vercel gives you the production URL, return to Render and update `CORS_ORIGINS` to that URL.
+`VITE_API_URL` has already been added to the Vercel production environment for this project. If Render gives the API a different hostname, update `VITE_API_URL` in Vercel and redeploy.
 
 ## Required Submission Links
 
 - GitHub repository: https://github.com/sangamyo/inventory-management
-- Backend API URL: Render service URL after Blueprint deploy
-- Frontend URL: Vercel production URL after frontend deploy
+- Backend API URL: `https://inventory-api.onrender.com` after Blueprint deploy
+- Frontend URL: https://frontend-ooedf0zg9-hari-om-kasaundhans-projects.vercel.app
 - Docker Hub backend image URL: publish `backend/Dockerfile` image if the assessment requires an explicit registry image
