@@ -58,6 +58,7 @@ npx vercel --prod
 ## Required Submission Links
 
 - GitHub repository: https://github.com/sangamyo/inventory-management
+- GitHub Actions CI: https://github.com/sangamyo/inventory-management/actions
 - Backend API URL: `https://inventory-api.onrender.com` after Blueprint deploy
 - Frontend URL: https://frontend-ooedf0zg9-hari-om-kasaundhans-projects.vercel.app
 - Docker Hub backend image URL: publish `backend/Dockerfile` image if the assessment requires an explicit registry image

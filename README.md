@@ -65,6 +65,8 @@ See [DEPLOYMENT.md](DEPLOYMENT.md) for the GitHub repo URL, Render Blueprint dee
 
 FigJam architecture diagram: `https://www.figma.com/board/2wZ2CK76ZWwmWKBzHYacEU?utm_source=codex&utm_content=edit_in_figjam&oai_id=&request_id=d4fd3a61-2398-4c18-b65d-5e839f02dc51&architecture=true`
 
+GitHub Actions CI validates backend tests, frontend build, and backend Docker image build on every push.
+
 Required submission links after deployment:
 
 - GitHub repository URL

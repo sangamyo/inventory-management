@@ -1,26 +1,25 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
 import {
   AlertCircle,
   Boxes,
   CheckCircle2,
   ClipboardList,
-  PackagePlus,
-  Pencil,
   RefreshCw,
-  ShoppingCart,
-  Trash2,
-  UserPlus,
   Users,
 } from "lucide-react";
 import { api } from "./api";
 import "./styles.css";
 
-const currency = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" });
+// Import modular components
+import { Metric } from "./components/Common";
+import { ProductSection } from "./components/ProductSection";
+import { CustomerSection } from "./components/CustomerSection";
+import { OrderSection } from "./components/OrderSection";
+import { OrderDetailsModal } from "./components/OrderDetailsModal";
 
 const initialProduct = { name: "", sku: "", price: "", quantity_in_stock: "" };
 const initialCustomer = { full_name: "", email: "", phone_number: "" };
-const initialOrder = { customer_id: "", product_id: "", quantity: "" };
 
 function App() {
   const [products, setProducts] = useState([]);
@@ -32,19 +31,18 @@ function App() {
     total_orders: 0,
     low_stock_products: 0,
   });
+  
   const [productForm, setProductForm] = useState(initialProduct);
   const [editingProductId, setEditingProductId] = useState(null);
   const [customerForm, setCustomerForm] = useState(initialCustomer);
-  const [orderForm, setOrderForm] = useState(initialOrder);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [notice, setNotice] = useState(null);
   const [loading, setLoading] = useState(false);
-
-  const selectedProduct = useMemo(
-    () => products.find((product) => product.id === Number(orderForm.product_id)),
-    [orderForm.product_id, products],
-  );
-  const orderEstimate = selectedProduct && orderForm.quantity ? selectedProduct.price * Number(orderForm.quantity) : 0;
+  
+  // Tab/View selection state
+  const [activeTab, setActiveTab] = useState("products");
+  // Product list filter state
+  const [productFilter, setProductFilter] = useState(null);
 
   async function loadAll() {
     setLoading(true);
@@ -120,6 +118,10 @@ function App() {
       price: product.price,
       quantity_in_stock: product.quantity_in_stock,
     });
+    // Open products view and scroll
+    setActiveTab("products");
+    setProductFilter(null);
+    scrollToSection("products-panel");
   }
 
   async function deleteProduct(productId) {
@@ -157,25 +159,18 @@ function App() {
     }
   }
 
-  async function submitOrder(event) {
-    event.preventDefault();
-    if (!orderForm.customer_id || !orderForm.product_id || Number(orderForm.quantity) <= 0) {
-      return showNotice("Choose a customer, product, and positive quantity.", "error");
-    }
+  async function handleCreateOrder(payload) {
     try {
-      await api.orders.create({
-        customer_id: Number(orderForm.customer_id),
-        items: [{ product_id: Number(orderForm.product_id), quantity: Number(orderForm.quantity) }],
-      });
-      setOrderForm(initialOrder);
+      await api.orders.create(payload);
       showNotice("Order created and inventory updated.");
       await loadAll();
     } catch (error) {
       showNotice(error.message, "error");
+      throw error;
     }
   }
 
-  async function deleteOrder(orderId) {
+  async function handleCancelOrder(orderId) {
     try {
       await api.orders.delete(orderId);
       showNotice("Order canceled and stock restored.");
@@ -183,6 +178,15 @@ function App() {
     } catch (error) {
       showNotice(error.message, "error");
     }
+  }
+
+  function scrollToSection(id) {
+    setTimeout(() => {
+      const el = document.getElementById(id);
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    }, 50);
   }
 
   return (
@@ -205,223 +209,85 @@ function App() {
       )}
 
       <section className="summary-grid" aria-label="Dashboard summary">
-        <Metric icon={<Boxes />} label="Products" value={summary.total_products} />
-        <Metric icon={<Users />} label="Customers" value={summary.total_customers} />
-        <Metric icon={<ClipboardList />} label="Orders" value={summary.total_orders} />
-        <Metric icon={<AlertCircle />} label="Low Stock" value={summary.low_stock_products} />
+        <Metric 
+          icon={<Boxes />} 
+          label="Products" 
+          value={summary.total_products} 
+          onClick={() => { setActiveTab("products"); setProductFilter(null); scrollToSection("products-panel"); }}
+          active={activeTab === "products" && productFilter === null}
+        />
+        <Metric 
+          icon={<Users />} 
+          label="Customers" 
+          value={summary.total_customers} 
+          onClick={() => { setActiveTab("customers"); scrollToSection("customers-panel"); }}
+          active={activeTab === "customers"}
+        />
+        <Metric 
+          icon={<ClipboardList />} 
+          label="Orders" 
+          value={summary.total_orders} 
+          onClick={() => { setActiveTab("orders"); scrollToSection("orders-panel"); }}
+          active={activeTab === "orders"}
+        />
+        <Metric 
+          icon={<AlertCircle />} 
+          label="Low Stock" 
+          value={summary.low_stock_products} 
+          onClick={() => { setActiveTab("products"); setProductFilter("low_stock"); scrollToSection("products-panel"); }}
+          active={activeTab === "products" && productFilter === "low_stock"}
+        />
       </section>
 
-      <div className="workspace">
-        <section className="panel">
-          <PanelTitle icon={<PackagePlus />} title={editingProductId ? "Update Product" : "Add Product"} />
-          <form className="form-grid" onSubmit={submitProduct}>
-            <label>
-              Product name
-              <input value={productForm.name} onChange={(event) => updateField(setProductForm, "name", event.target.value)} />
-            </label>
-            <label>
-              SKU/code
-              <input value={productForm.sku} onChange={(event) => updateField(setProductForm, "sku", event.target.value)} />
-            </label>
-            <label>
-              Price
-              <input
-                min="0.01"
-                step="0.01"
-                type="number"
-                value={productForm.price}
-                onChange={(event) => updateField(setProductForm, "price", event.target.value)}
-              />
-            </label>
-            <label>
-              Stock quantity
-              <input
-                min="0"
-                step="1"
-                type="number"
-                value={productForm.quantity_in_stock}
-                onChange={(event) => updateField(setProductForm, "quantity_in_stock", event.target.value)}
-              />
-            </label>
-            <button className="primary" type="submit">{editingProductId ? "Save Product" : "Add Product"}</button>
-          </form>
-          <DataTable
-            emptyText={loading ? "Loading products..." : "No products yet."}
-            columns={["Product", "SKU", "Price", "Stock", ""]}
-            rows={products.map((product) => [
-              product.name,
-              product.sku,
-              currency.format(product.price),
-              <StockBadge key="stock" value={product.quantity_in_stock} />,
-              <RowActions key="actions" onEdit={() => editProduct(product)} onDelete={() => deleteProduct(product.id)} />,
-            ])}
+      <div className="workspace single-view">
+        {activeTab === "products" && (
+          <ProductSection
+            products={products}
+            productForm={productForm}
+            setProductForm={setProductForm}
+            editingProductId={editingProductId}
+            setEditingProductId={setEditingProductId}
+            submitProduct={submitProduct}
+            editProduct={editProduct}
+            deleteProduct={deleteProduct}
+            loading={loading}
+            initialProduct={initialProduct}
+            updateField={updateField}
+            productFilter={productFilter}
+            setProductFilter={setProductFilter}
           />
-        </section>
+        )}
 
-        <section className="panel">
-          <PanelTitle icon={<UserPlus />} title="Customers" />
-          <form className="form-grid" onSubmit={submitCustomer}>
-            <label>
-              Full name
-              <input value={customerForm.full_name} onChange={(event) => updateField(setCustomerForm, "full_name", event.target.value)} />
-            </label>
-            <label>
-              Email
-              <input type="email" value={customerForm.email} onChange={(event) => updateField(setCustomerForm, "email", event.target.value)} />
-            </label>
-            <label className="wide">
-              Phone number
-              <input value={customerForm.phone_number} onChange={(event) => updateField(setCustomerForm, "phone_number", event.target.value)} />
-            </label>
-            <button className="primary" type="submit">Add Customer</button>
-          </form>
-          <DataTable
-            emptyText={loading ? "Loading customers..." : "No customers yet."}
-            columns={["Name", "Email", "Phone", ""]}
-            rows={customers.map((customer) => [
-              customer.full_name,
-              customer.email,
-              customer.phone_number,
-              <IconOnly key="delete" title="Delete customer" onClick={() => deleteCustomer(customer.id)} icon={<Trash2 size={16} />} />,
-            ])}
+        {activeTab === "customers" && (
+          <CustomerSection
+            customers={customers}
+            customerForm={customerForm}
+            setCustomerForm={setCustomerForm}
+            submitCustomer={submitCustomer}
+            deleteCustomer={deleteCustomer}
+            loading={loading}
+            updateField={updateField}
           />
-        </section>
+        )}
 
-        <section className="panel panel-wide">
-          <PanelTitle icon={<ShoppingCart />} title="Orders" />
-          <form className="form-grid order-form" onSubmit={submitOrder}>
-            <label>
-              Customer
-              <select value={orderForm.customer_id} onChange={(event) => updateField(setOrderForm, "customer_id", event.target.value)}>
-                <option value="">Select customer</option>
-                {customers.map((customer) => <option key={customer.id} value={customer.id}>{customer.full_name}</option>)}
-              </select>
-            </label>
-            <label>
-              Order product
-              <select value={orderForm.product_id} onChange={(event) => updateField(setOrderForm, "product_id", event.target.value)}>
-                <option value="">Select product</option>
-                {products.map((product) => <option key={product.id} value={product.id}>{product.name} ({product.quantity_in_stock})</option>)}
-              </select>
-            </label>
-            <label>
-              Order quantity
-              <input
-                min="1"
-                step="1"
-                type="number"
-                value={orderForm.quantity}
-                onChange={(event) => updateField(setOrderForm, "quantity", event.target.value)}
-              />
-            </label>
-            <div className="estimate">{currency.format(orderEstimate || 0)}</div>
-            <button className="primary" type="submit">Create Order</button>
-          </form>
-          <DataTable
-            emptyText={loading ? "Loading orders..." : "No orders yet."}
-            columns={["Order", "Customer", "Items", "Total", ""]}
-            rows={orders.map((order) => [
-              `#${order.id}`,
-              order.customer.full_name,
-              order.items.map((item) => `${item.product.name} x ${item.quantity}`).join(", "),
-              currency.format(order.total_amount),
-              <div className="row-actions" key="actions">
-                <button className="text-button" onClick={() => setSelectedOrder(order)} type="button">Details</button>
-                <IconOnly title="Cancel order" onClick={() => deleteOrder(order.id)} icon={<Trash2 size={16} />} />
-              </div>,
-            ])}
+        {activeTab === "orders" && (
+          <OrderSection
+            customers={customers}
+            products={products}
+            orders={orders}
+            onCreateOrder={handleCreateOrder}
+            onCancelOrder={handleCancelOrder}
+            onViewDetails={setSelectedOrder}
+            loading={loading}
           />
-        </section>
+        )}
       </div>
 
-      {selectedOrder && (
-        <div className="modal-backdrop" onClick={() => setSelectedOrder(null)}>
-          <section className="modal" onClick={(event) => event.stopPropagation()}>
-            <div className="modal-header">
-              <h2>Order #{selectedOrder.id}</h2>
-              <button className="text-button" onClick={() => setSelectedOrder(null)} type="button">Close</button>
-            </div>
-            <p>{selectedOrder.customer.full_name} · {selectedOrder.customer.email}</p>
-            <ul>
-              {selectedOrder.items.map((item) => (
-                <li key={item.id}>
-                  {item.product.name} · {item.quantity} x {currency.format(item.unit_price)} = {currency.format(item.line_total)}
-                </li>
-              ))}
-            </ul>
-            <strong>Total {currency.format(selectedOrder.total_amount)}</strong>
-          </section>
-        </div>
-      )}
+      <OrderDetailsModal
+        selectedOrder={selectedOrder}
+        setSelectedOrder={setSelectedOrder}
+      />
     </main>
-  );
-}
-
-function Metric({ icon, label, value }) {
-  return (
-    <article className="metric">
-      <div className="metric-icon">{React.cloneElement(icon, { size: 20 })}</div>
-      <div>
-        <span>{label}</span>
-        <strong>{value}</strong>
-      </div>
-    </article>
-  );
-}
-
-function PanelTitle({ icon, title }) {
-  return (
-    <div className="panel-title">
-      {React.cloneElement(icon, { size: 20 })}
-      <h2>{title}</h2>
-    </div>
-  );
-}
-
-function StockBadge({ value }) {
-  const status = value <= 5 ? "low" : "ok";
-  return <span className={`stock ${status}`}>{value}</span>;
-}
-
-function IconOnly({ icon, title, onClick }) {
-  return (
-    <button className="icon-button small" onClick={onClick} title={title} type="button">
-      {icon}
-    </button>
-  );
-}
-
-function RowActions({ onEdit, onDelete }) {
-  return (
-    <div className="row-actions">
-      <IconOnly title="Edit product" onClick={onEdit} icon={<Pencil size={16} />} />
-      <IconOnly title="Delete product" onClick={onDelete} icon={<Trash2 size={16} />} />
-    </div>
-  );
-}
-
-function DataTable({ columns, rows, emptyText }) {
-  return (
-    <div className="table-wrap">
-      <table>
-        <thead>
-          <tr>{columns.map((column) => <th key={column}>{column}</th>)}</tr>
-        </thead>
-        <tbody>
-          {rows.length === 0 ? (
-            <tr>
-              <td className="empty" colSpan={columns.length}>{emptyText}</td>
-            </tr>
-          ) : (
-            rows.map((row, rowIndex) => (
-              <tr key={rowIndex}>
-                {row.map((cell, cellIndex) => <td key={cellIndex}>{cell}</td>)}
-              </tr>
-            ))
-          )}
-        </tbody>
-      </table>
-    </div>
   );
 }
 
