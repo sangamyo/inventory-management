@@ -11,7 +11,7 @@ services:
           name: inventory-db
           property: connectionString
       - key: CORS_ORIGINS
-        value: https://frontend-ooedf0zg9-hari-om-kasaundhans-projects.vercel.app
+        value: https://sangamyo-inventory-management.vercel.app,https://frontend-ooedf0zg9-hari-om-kasaundhans-projects.vercel.app,http://localhost:5173
 
 databases:
   - name: inventory-db
