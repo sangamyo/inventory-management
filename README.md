@@ -61,6 +61,8 @@ Backend can be deployed to Render with `render.yaml`. Configure `CORS_ORIGINS` t
 
 Frontend can be deployed to Vercel from the `frontend` directory. Set `VITE_API_URL` to the live backend API URL before deploying.
 
+See [DEPLOYMENT.md](DEPLOYMENT.md) for the GitHub repo URL, Render Blueprint deeplink, and final deployment checklist.
+
 Required submission links after deployment:
 
 - GitHub repository URL
